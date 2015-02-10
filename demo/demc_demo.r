@@ -95,8 +95,8 @@ summary(Draws2, keep.all = TRUE)
 dim(Draws2$Draws) # 2*Niter
 Nchain = 4
 Draws2.B <- demc_zs(Nchain, Draws2, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
-summary(Draws2, keep.all = TRUE)
-dim(Draws2$Draws) # 2*Niter
+summary(Draws2.B, keep.all = TRUE)
+dim(Draws2.B$Draws) # 2*Niter
 
 
 # demc_zs can use a single chain

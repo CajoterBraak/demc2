@@ -15,6 +15,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+[Previously saved workspace restored]
+
 > #  Adaptive MCMC via demc
 > rm(list=ls(all=TRUE))
 > 
@@ -205,26 +207,26 @@ Loading required package: lattice
 > nZ = ncol(Draws1$Draws)
 > Z_index = floor(seq(from =nZ/2, to = nZ, length.out = nval ))
 > Z = Draws1$Draws[,Z_index]
-> Nchain = 2
+> Nchain = 3
 > Draws2.0 <- demc_zs(Nchain, Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
 > summary(Draws2.0, keep.all = TRUE)
 $parameters
-                mean        sd      2.5%        25%        50%        75%
-b1         0.9442282 0.2842857  0.386137  0.7504136  0.9515766  1.1376375
-b2         2.0363478 0.3381455  1.356664  1.8158828  2.0404036  2.2712449
-logsigma2 -0.5644041 0.3292132 -1.168161 -0.7937871 -0.5797860 -0.3601538
-             97.5%      Rhat n.eff
-b1        1.485649 1.0055640  5900
-b2        2.679172 0.9877554  6000
-logsigma2 0.111486 1.0158313  5800
+                mean        sd       2.5%        25%        50%        75%
+b1         0.9656763 0.2755743  0.4176638  0.7861657  0.9617526  1.1459825
+b2         2.0398920 0.3150162  1.4147593  1.8360428  2.0462517  2.2547905
+logsigma2 -0.5820571 0.3202039 -1.1770271 -0.7975057 -0.6056576 -0.3703678
+              97.5%      Rhat n.eff
+b1        1.5012869 0.9964163  6000
+b2        2.6250960 0.9973691  6000
+logsigma2 0.0697204 1.0040802  5900
 
 $accept.prob
          chains
-blocks      chain 1   chain 2
-  block 1 0.3313333 0.3473333
+blocks    chain 1 chain 2 chain 3
+  block 1   0.341  0.3285  0.3405
 
 $mean.accept
-[1] 0.3393333
+[1] 0.3366667
 
 > dim(Draws2.0$Draws)
 [1]    3 6000
@@ -257,33 +259,91 @@ $mean.accept
 
 > dim(Draws2$Draws) # 2*Niter
 [1]     3 12000
+> Nchain = 4
+> Draws2.B <- demc_zs(Nchain, Draws2, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
+Warning message:
+In demc_zs(Nchain, Draws2, logPosterior, data = Data, n.generation = floor(N.iter/Nchain),  :
+  demc_zs: Nchain of previous run was smaller;1 additional chain-heads sampled from second halve of previous run
+> summary(Draws2.B, keep.all = TRUE)
+$parameters
+                mean        sd       2.5%        25%        50%        75%
+b1         0.9614142 0.3110908  0.4086388  0.7848668  0.9685460  1.1460368
+b2         2.0256940 0.3618316  1.3896055  1.8123884  2.0327250  2.2472552
+logsigma2 -0.5832928 0.3684958 -1.1829416 -0.8201027 -0.6157522 -0.3937694
+              97.5%     Rhat n.eff
+b1        1.5050190 1.013253 17000
+b2        2.6633513 1.023573 16000
+logsigma2 0.1489964 1.162017 10000
+
+$accept.prob
+         chains
+blocks    chain 1   chain 2   chain 3   chain 4
+  block 1   0.316 0.2906667 0.2953333 0.3126667
+
+$mean.accept
+[1] 0.3036667
+
+> dim(Draws2.B$Draws) # 2*Niter
+[1]     3 18000
+> 
 > 
 > # demc_zs can use a single chain
 > Nchain = 1
 > Draws3 <- demc_zs(Nchain, Draws2, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
 > summary(Draws3, keep.all = FALSE)
 $parameters
-               mean        sd       2.5%        25%        50%        75%
-b1         0.955277 0.2623173  0.4350156  0.7834040  0.9625856  1.1358878
-b2         2.023682 0.3105614  1.4089144  1.8251773  2.0324387  2.2334063
-logsigma2 -0.583304 0.3142101 -1.1775608 -0.7959235 -0.5957163 -0.3803071
-               97.5% Rhat n.eff
-b1        1.46677054   NA    NA
-b2        2.65054667   NA    NA
-logsigma2 0.06732518   NA    NA
+                mean        sd       2.5%        25%        50%        75%
+b1         0.9441559 0.2762653  0.4054245  0.7669165  0.9422174  1.1271128
+b2         2.0032326 0.3245293  1.3518419  1.7899829  2.0149590  2.2186256
+logsigma2 -0.5710019 0.3333638 -1.1808492 -0.8006060 -0.5840099 -0.3509721
+              97.5% Rhat n.eff
+b1        1.5163366   NA    NA
+b2        2.6469150   NA    NA
+logsigma2 0.1105224   NA    NA
 
 $accept.prob
          chains
-blocks    chain 1
-  block 1   0.304
+blocks      chain 1
+  block 1 0.3151667
 
 $mean.accept
-[1] 0.304
+[1] 0.3151667
 
 > dim(Draws3$Draws) # 3*Niter 
 [1]     3 18000
-> acfplot(window(Draws3,start = 1000))
-Error in window.default(Draws3, start = 1000) : 
-  'start' cannot be after 'end'
-Calls: acfplot -> window -> window.default
-Execution halted
+> acfplot(window(as.coda(Draws3),start = ncol(Draws3$Draws)/2))
+> 
+> Nchain = 3
+> blocks = list(); 
+> # two blocks
+> blocks[[1]]=  c(1,3) 
+> blocks[[2]] = 2
+> Draws4 <- demc_zs(Nchain, Draws1, logPosterior, blocks = blocks, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
+> #monitor.DE.MC(Draws.DEMCZS3$Draws, keep.all = TRUE , m= Nchain)
+> summary(Draws4, keep.all = TRUE)
+$parameters
+                mean        sd       2.5%        25%        50%       75%
+b1         0.9489210 0.3283900  0.3850997  0.7815946  0.9551892  1.130087
+b2         2.0214599 0.3886982  1.3390186  1.8148251  2.0239379  2.244079
+logsigma2 -0.5632574 0.3942818 -1.1664107 -0.8142198 -0.6055676 -0.380722
+              97.5%      Rhat n.eff
+b1        1.5140763 1.0167603 11000
+b2        2.6916471 0.9869284 12000
+logsigma2 0.2690076 1.1902859  7600
+
+$accept.prob
+         chains
+blocks    chain 1 chain 2 chain 3
+  block 1  0.2705   0.257  0.2595
+  block 2  0.2890   0.295  0.2860
+
+$mean.accept
+[1] 0.2761667
+
+> dim(Draws4$Draws) # Niter 
+[1]     3 12000
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  17.90    0.67   19.46 

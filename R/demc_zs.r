@@ -54,15 +54,20 @@ demc_zs <- function(Nchain = 3, Z, FUN, X,
 if ("demc"%in%class(Z)) {
       is.update = TRUE
       was.demc_zs = Z$demc_zs
+      Nchain0 = Z$Nchain
       if (missing(X)) { 
         X = Z$X.final
-        if (Nchain >= ncol(X)) { 
-          warning("demc_zs: Nchain of previous run was smaller; Nchain set to ",ncol(X))  
-          Nchain = ncol(X)
-        }
+        if (Nchain > Nchain0) { 
+           Nchain.add = Nchain - Nchain0
+           warning("demc_zs: Nchain of previous run was smaller;",Nchain.add, " additional chain-heads sampled from second halve of previous run")  
+           
+          indx = ncol(Z$Draws)/2  + sample.int(ncol(Z$Draws)/2,Nchain.add)
+          X.add = Z$Draws[,indx]
+          } else X.add = NULL
         index = 1: min(ncol(X),Nchain)
-       X = X[,index, drop = FALSE]
-       logfitness_X = Z$logfitness.X.final[index] 
+        X = cbind(X[,index, drop = FALSE],X.add)
+        if (is.null(X.add))logfitness_X = Z$logfitness.X.final[index]
+        else    logfitness_X = apply (X, 2, FUN, ...)  
       }
       Z = Z$Draws
       if (n.burnin>0 && was.demc_zs) warning("n.burnin>0 invalids ergodicity on restarts/updates;/n use n.thin instead")
