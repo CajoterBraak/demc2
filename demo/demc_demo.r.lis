@@ -1,0 +1,289 @@
+
+R version 3.1.2 (2014-10-31) -- "Pumpkin Helmet"
+Copyright (C) 2014 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #  Adaptive MCMC via demc
+> rm(list=ls(all=TRUE))
+> 
+> library(LaplacesDemon) # or geoR for dinvchisq (and rinvchisq, rmvn)
+Loading required package: parallel
+> library(geoR)
+Loading required package: sp
+Loading required package: MASS
+--------------------------------------------------------------
+ Analysis of geostatistical data
+ For an Introduction to geoR go to http://www.leg.ufpr.br/geoR
+ geoR version 1.7-4.1 (built on 2012-06-29) is now loaded
+--------------------------------------------------------------
+
+
+Attaching package: 'geoR'
+
+The following objects are masked from 'package:LaplacesDemon':
+
+    dinvchisq, rinvchisq
+
+> library(demc)
+
+Attaching package: 'demc'
+
+The following objects are masked from 'package:LaplacesDemon':
+
+    invlogit, logit
+
+> # example of Bayesian linear regresssion without intercept
+> # generate some data 
+> set.seed(13451)
+> n= 20
+> rho = -0.8
+> # generate two correlated predictors
+> Sigma = matrix(c(1,rho,rho,1),nrow = 2,ncol=2)
+> X = rmvn(n, mu = rep(0, nrow(Sigma)), Sigma = Sigma)
+> Beta = c(1,2);sigma = 0.5
+> y = X%*%Beta + sigma*rnorm(n)
+> Data = data.frame(y,X); names(Data)
+[1] "y"  "X1" "X2"
+> # parameters of priors (used with these names in the function defining the logposterior)
+> v1= 10; v2= 5; # fixed values for the parametes in the prior for beta1 and beta2
+> nu = 2;  tau2 = 3 # fixed values for the parameters in the prior for sigma2
+> # end of set-up of Bayesian model and data for linear regression
+> 
+> # define a demc run to find the posterior of the parameters vector (b1,b2,sigma2)
+> # step 1: write a function that gives 
+> # the value of the logposterior for each value of the parmeter vector
+> # here it is predefined; see what it looks like
+> logposterior_sigma2
+function(theta, data){
+    # make data variates local 
+  y = data$y; x1= data$X1 ; x2 = data$X2
+  # make the parameters available
+  b1 = theta[1]
+  b2 = theta[2]
+  sigma2 = theta[3] # sigma squared
+  if (sigma2 >0) {
+    # prior
+    logprior = dnorm(b1, 0, sqrt(v1), log= TRUE)+dnorm(b2,0,sqrt(v2), log= TRUE)+geoR::dinvchisq(sigma2, nu, tau2, log= TRUE) 
+    # likelihood 
+    loglikelihood = sum(dnorm(y, mean = b1*x1+b2*x2, sd = sqrt(sigma2),log= TRUE))
+    logpost = logprior + loglikelihood  
+  } else logpost = -Inf # because logprior = -Inf
+  logpost
+}
+<environment: namespace:demc>
+> # check whether the logposterior function works
+> logposterior_sigma2(c(1,1,1),data = Data)
+[1] -36.96542
+> logposterior_sigma2(c(1,1,-1),data = Data) # -Inf as it should
+[1] -Inf
+> 
+> # step 2: define the number of parallel chains
+> d = 3 # number of parameters (=length of parameter vector)
+> (Nchain = 2*d) # 
+[1] 6
+> #  DEMC needs an initial population Z of Nchain samples
+> # step 3: generate initial population as start of each chain
+> # for example, sample an initial population from the prior
+> b1 = b1_init = rnorm(Nchain,0,sqrt(v1))
+> b2 = b2_init = rnorm(Nchain,0,sqrt(v2))
+> sigma2 = sigma2_init = rinvchisq(Nchain,nu,tau2)
+> Z = rbind(b1,b2, sigma2)
+>  
+> N.iter = 6000
+> Draws0 <- demc(Z, logposterior_sigma2, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin =0 )
+> summary(Draws0)
+$parameters
+            mean        sd      2.5%       25%       50%       75%    97.5%
+b1     0.9188062 0.3758774 0.2644072 0.7168202 0.9401699 1.1314331 1.522188
+b2     1.9870668 0.4528385 1.0774219 1.7754198 2.0156018 2.2583178 2.701398
+sigma2 0.7479468 0.8688238 0.3240558 0.4600824 0.5744077 0.7580387 1.884886
+            Rhat n.eff
+b1     0.9901037  6000
+b2     1.0213738  5100
+sigma2 1.3543568  1800
+
+$accept.prob
+         chains
+blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
+  block 1   0.266   0.305   0.289   0.273   0.259   0.277
+
+$mean.accept
+[1] 0.2781667
+
+> summary(Draws0, keep.all = FALSE)
+$parameters
+            mean        sd      2.5%       25%       50%       75%    97.5%
+b1     0.9384365 0.2725903 0.3921533 0.7495376 0.9342394 1.1133250 1.486256
+b2     2.0057563 0.3284051 1.3172731 1.7969916 2.0157115 2.2321267 2.593751
+sigma2 0.5814804 0.1931267 0.3057732 0.4385823 0.5400512 0.6757478 1.071744
+            Rhat n.eff
+b1     0.9917049  3000
+b2     0.9903554  3000
+sigma2 0.9856502  3000
+
+$accept.prob
+         chains
+blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
+  block 1   0.266   0.305   0.289   0.273   0.259   0.277
+
+$mean.accept
+[1] 0.2781667
+
+> 
+> 
+> # Recommendation: use parameters with unbounded support
+> logsigma2 = log(sigma2_init)
+> Z = rbind(b1,b2, logsigma2)
+> logposterior_logsigma2
+function(theta, data){ 
+  theta_original = theta
+  theta_original[3] =  exp(theta[3]) #    sigma2 
+  logposterior_sigma2(theta_original, data = data) + theta[3]   # theta[3] = log(sigma2)
+  # the second term stems from the Jacobian, slide LL122, section 2.9 of the LL book
+}
+<environment: namespace:demc>
+> logPosterior <- logposterior_logsigma2
+> logPosterior(Z[,1],data = Data)
+       b1 
+-54.94846 
+> #Ex DEMC.2
+> N.iter = 6000
+> Draws1 <- demc(Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin =0 )
+> summary(Draws1)
+$parameters
+                mean        sd      2.5%        25%        50%        75%
+b1         0.9585418 0.3818033  0.361985  0.7843201  0.9761951  1.1504852
+b2         2.0303909 0.4459466  1.339019  1.8184039  2.0420644  2.2617535
+logsigma2 -0.5495896 0.4491399 -1.166411 -0.8157426 -0.6188663 -0.3916864
+              97.5%      Rhat n.eff
+b1        1.5615666 0.9992702  6000
+b2        2.7519281 1.0045686  6000
+logsigma2 0.5958656 1.3282455  1900
+
+$accept.prob
+         chains
+blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
+  block 1    0.31   0.311   0.306   0.305   0.292   0.295
+
+$mean.accept
+[1] 0.3031667
+
+> dim(Draws1$Draws)
+[1]    3 6000
+> #summary(Draws1, keep.all = FALSE)
+> C1= as.coda(Draws1)
+Loading required package: lattice
+> library(coda)
+> gelman.plot(C1,  max.bins = 20,confidence = 0.95, transform = FALSE, autoburnin=FALSE, auto.layout = TRUE)
+> C1.2 = window(C1, start= N.iter/Nchain/2) # start = 500 from the 1000 generations
+> acfplot(C1.2)
+> 
+> ## DEMCzs needs a large initial population
+> ## start from fresh 
+> ## NOT run
+> # nval = 10*d ## 10* number of parameters
+> # b0 = b0_init = rnorm(nval,0,sqrt(v1))
+> # b1 = b1_init = rnorm(nval,0,sqrt(v2))
+> # logsigma2 = logsigma2_init = log(rinvchisq(nval,nu,tau2))
+> # Z = rbind(b0,b1, logsigma2)
+> ## 
+> ## 
+> ## or use result from previous run, either explicitly
+> nval = 10*d ## 10* number of parameters
+> nZ = ncol(Draws1$Draws)
+> Z_index = floor(seq(from =nZ/2, to = nZ, length.out = nval ))
+> Z = Draws1$Draws[,Z_index]
+> Nchain = 2
+> Draws2.0 <- demc_zs(Nchain, Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
+> summary(Draws2.0, keep.all = TRUE)
+$parameters
+                mean        sd      2.5%        25%        50%        75%
+b1         0.9442282 0.2842857  0.386137  0.7504136  0.9515766  1.1376375
+b2         2.0363478 0.3381455  1.356664  1.8158828  2.0404036  2.2712449
+logsigma2 -0.5644041 0.3292132 -1.168161 -0.7937871 -0.5797860 -0.3601538
+             97.5%      Rhat n.eff
+b1        1.485649 1.0055640  5900
+b2        2.679172 0.9877554  6000
+logsigma2 0.111486 1.0158313  5800
+
+$accept.prob
+         chains
+blocks      chain 1   chain 2
+  block 1 0.3313333 0.3473333
+
+$mean.accept
+[1] 0.3393333
+
+> dim(Draws2.0$Draws)
+[1]    3 6000
+> ## 
+> # end NOT run 
+> 
+> 
+> 
+> # or implicitly by using the result of a previous run:
+> Nchain = 3
+> Draws2 <- demc_zs(Nchain, Draws1, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
+> summary(Draws2, keep.all = TRUE)
+$parameters
+                mean        sd       2.5%        25%        50%        75%
+b1         0.9602552 0.3325500  0.3854914  0.7848623  0.9692641  1.1498769
+b2         2.0283134 0.3847045  1.3764769  1.8161319  2.0369440  2.2549059
+logsigma2 -0.5738435 0.3949069 -1.1728537 -0.8228942 -0.6210230 -0.3901465
+              97.5%      Rhat n.eff
+b1        1.5216754 1.0078920 12000
+b2        2.6789440 0.9793907 12000
+logsigma2 0.2336818 1.1835618  7600
+
+$accept.prob
+         chains
+blocks    chain 1 chain 2 chain 3
+  block 1   0.289  0.2905   0.309
+
+$mean.accept
+[1] 0.2961667
+
+> dim(Draws2$Draws) # 2*Niter
+[1]     3 12000
+> 
+> # demc_zs can use a single chain
+> Nchain = 1
+> Draws3 <- demc_zs(Nchain, Draws2, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
+> summary(Draws3, keep.all = FALSE)
+$parameters
+               mean        sd       2.5%        25%        50%        75%
+b1         0.955277 0.2623173  0.4350156  0.7834040  0.9625856  1.1358878
+b2         2.023682 0.3105614  1.4089144  1.8251773  2.0324387  2.2334063
+logsigma2 -0.583304 0.3142101 -1.1775608 -0.7959235 -0.5957163 -0.3803071
+               97.5% Rhat n.eff
+b1        1.46677054   NA    NA
+b2        2.65054667   NA    NA
+logsigma2 0.06732518   NA    NA
+
+$accept.prob
+         chains
+blocks    chain 1
+  block 1   0.304
+
+$mean.accept
+[1] 0.304
+
+> dim(Draws3$Draws) # 3*Niter 
+[1]     3 18000
+> acfplot(window(Draws3,start = 1000))
+Error in window.default(Draws3, start = 1000) : 
+  'start' cannot be after 'end'
+Calls: acfplot -> window -> window.default
+Execution halted

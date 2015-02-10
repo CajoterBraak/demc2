@@ -1,4 +1,4 @@
-demc <- function(X, FUN, blocks = list(seq_len(nrow(X))), f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, verbose = FALSE,logfitness_X, ...){
+demc <- function(X, FUN, blocks, f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, verbose = FALSE,logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # X is the initial population: a matrix of number of parameters by number of individuals (k x Npop) or its transpose
 # 
@@ -35,6 +35,7 @@ if ("demc"%in%class(X)) {
    X = t(X)
   } 
 }
+if (missing(blocks)) blocks= list(seq_len(nrow(X)))
 Npop = ncol(X)
 Npar = nrow(X)
 chainset = seq_len(Npop)

@@ -1,6 +1,6 @@
-demc_zs <- function(Nchain = 3, Z, FUN, X= matrix(Z[,1:Nchain,drop=FALSE], ncol = Nchain),
-                     blocks = list(seq_len(nrow(X))), f = 2.38, pSnooker= 0.1, pGamma1 = 0.1, n.generation = 10, 
- n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, ...){
+demc_zs <- function(Nchain = 3, Z, FUN, X,
+                     blocks, f = 2.38, pSnooker= 0.1, pGamma1 = 0.1, n.generation = 10, 
+ n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # Z is the initial population: a matrix of number of parameters by number of individuals (d x m0)
 # X is the initial active population that will be evolved: a matrix of number of parameters by number of individuals (d x N)
@@ -51,6 +51,47 @@ demc_zs <- function(Nchain = 3, Z, FUN, X= matrix(Z[,1:Nchain,drop=FALSE], ncol 
 #  Cajo ter Braak, Biometris, Wageningen UR, cajo.terbraak@wur.nl   23 October 2008
 #  
 #
+if ("demc"%in%class(Z)) {
+      is.update = TRUE
+      was.demc_zs = Z$demc_zs
+      if (missing(X)) { 
+        X = Z$X.final
+        if (Nchain >= ncol(X)) { 
+          warning("demc_zs: Nchain of previous run was smaller; Nchain set to ",ncol(X))  
+          Nchain = ncol(X)
+        }
+        index = 1: min(ncol(X),Nchain)
+       X = X[,index, drop = FALSE]
+       logfitness_X = Z$logfitness.X.final[index] 
+      }
+      Z = Z$Draws
+      if (n.burnin>0 && was.demc_zs) warning("n.burnin>0 invalids ergodicity on restarts/updates;/n use n.thin instead")
+} else { # no update
+      if(!(is.matrix(Z)&& is.numeric(Z))) stop("demc: Z and X must be a numeric matrix")
+      is.update = FALSE
+      if (nrow(Z)>ncol(Z)) {
+        message("demc_zs: nrow of initial population (", 
+                nrow(Z),") larger than ncol (",ncol(Z),")\n Initial matrix transposed on the assumption that there are ", ncol(Z)," parameters")
+        Z = t(Z)
+      }
+      if (missing(X)){
+        X = Z[,1:Nchain,drop=FALSE] 
+      } else 
+        if (ncol(X) !=  Nchain){
+          if (nrow(X) ==  Nchain && nrow(Z)==ncol(X)){
+            message("demc_zs: nrow of initial population X (=", 
+                    nrow(X),") equal to Nchain (=",Nchain,")\n  Matrix X transposed on the assumption that there are ", ncol(X)," parameters")
+            X = t(X)
+          }
+        } else stop("demc_zs: ncol of initial population X(", 
+                    nrow(X),") not equal to Nchain (=",Nchain,")\n  and there appear ", nrow(Z)," parameters") 
+}
+      
+if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
+
+if (missing(blocks)) blocks= list(seq_len(nrow(X)))
+if (missing(logfitness_X)) logfitness_X = apply (X, 2, FUN, ...)
+  
 M0 = mZ = ncol(Z)
 #Nchain = ncol(X)
 #Npar = nrow(X)
@@ -60,7 +101,6 @@ accept = rep(NA,n.generation)
 chainset = seq_len(Nchain)
 rr = NULL
 r_extra = 0
-logfitness_X = apply (X, 2, FUN, ...)
 Nblock = length(blocks)
 f = matrix(f,nrow=1,ncol=Nblock)
 Fs = f/sqrt(2)
@@ -108,7 +148,8 @@ for (iter in 1:n.generation) {
          x_prop[parset] = x_prop_sub
          r_extra = 0
         }
-       logfitness_x_prop = FUN(x_prop,  ...)
+       #logfitness_x_prop = FUN(x_prop,  ...)
+       logfitness_x_prop = FUN(x_prop,  data = Data)
        logr =  logfitness_x_prop - logfitness_X[i]
       # print(c(logfitness_X[i], logfitness_x_prop ,logr,r_extra))
        if (!is.na(logr) & (logr + r_extra)> log(runif(1)) ){
@@ -124,7 +165,8 @@ for (iter in 1:n.generation) {
    }
 
 } # n.generation
- out = list(Draws= Z[,-(1:(M0 + Nchain* floor(n.burnin/n.thin))),drop = FALSE] , accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Nchain)
+ if (!is.update) Z = Z[,-(1:(M0 + Nchain* floor(n.burnin/n.thin))),drop = FALSE]
+ out = list(Draws=  Z , accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Nchain, demc_zs = TRUE)
  class(out) <- c("demc")
  invisible(out)
 }
