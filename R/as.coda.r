@@ -1,5 +1,6 @@
-as.coda.demc <-function(Draws.DEMC){
-  require(coda)
+as.coda <-function(Draws.DEMC){
+  if (!"demc"%in%class(Draws.DEMC)) stop("argument to summary.demc must be of class demc")
+  library(coda)
   Draws =Draws.DEMC$Draws
   Nchain= Draws.DEMC$Nchain
   Chain= list()

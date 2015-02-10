@@ -1,7 +1,7 @@
-demc <- function(X, FUN, blocks = list(seq_len(nrow(X))), f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, ...){
+demc <- function(X, FUN, blocks = list(seq_len(nrow(X))), f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, verbose = FALSE,logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
-# X is the initial population: a matrix of number of parameters by number of individuals (k x Npop)
-# value
+# X is the initial population: a matrix of number of parameters by number of individuals (k x Npop) or its transpose
+# 
 # FUN(theta ,...) with theta a k vector of parameter values and ... are other arguments to FUN (e.g. NULL, data, ..)
 # blocks: list of sets of indices for parameters, where each set contains the
 #              indices of variables in theta that are updated jointly
@@ -11,6 +11,7 @@ demc <- function(X, FUN, blocks = list(seq_len(nrow(X))), f = -2.38, n.generatio
 #              blocks[[iblock]] contains indices of parameters that are jointly updated,
 #              e.g. blocks= list(); blocks[[1]] = c(1,3); blocks[[2]] = c(2,4)
 # f  scale factor for d = 1; for d>1 divided by sqrt(2d); if negative, scale is set to 1 (0.98 in fact) to allow for multimodality.
+#      can be a vector of length(blocks) to set differential scaling factors for blocks 
 # Value
 # $Draws k x (Npop*n) array  with n the number of retained simulations  [post process with monitor.DE.MC]
 #         matrix(Draws[p,],nrow= Npop) is an Npop x n array (for each p in 1:k)
@@ -20,6 +21,20 @@ demc <- function(X, FUN, blocks = list(seq_len(nrow(X))), f = -2.38, n.generatio
 # Reference:
 # ter Braak, C. J. F. (2006). A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution:
 # easy Bayesian computing for real parameter spaces. Statistics and Computing, 16, 239-249.
+
+if ("demc"%in%class(X)) {
+  is.update = TRUE
+  X = X$X.final
+  logfitness_X = logfitness.X.final
+} else {
+  if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
+  is.update = FALSE
+  if (nrow(X)>ncol(X)) {
+   message("demc: nrow of initial population (", 
+           nrow(X),") larger than ncol (",ncol(X),")\n Initial matrix transposed on the assumption that there are ", ncol(X)," parameters")
+   X = t(X)
+  } 
+}
 Npop = ncol(X)
 Npar = nrow(X)
 chainset = seq_len(Npop)
@@ -28,7 +43,7 @@ F2 =  matrix(abs(f),nrow=1,ncol=Nblock)
 if (min(f)>0) F1 = F2 else F1 = rep(0.98,Nblock)
 Draws = NULL
 accept = matrix(rep(NA,n.generation*Nblock),nrow = n.generation, ncol= Nblock)
-logfitness_X = apply (X, 2, FUN, ...)
+if (missing(logfitness_X) && !is.update) logfitness_X = apply (X, 2, FUN, ...)
 Naccept = matrix(0,nrow = Nblock, ncol = Npop, dim=list(blocks=paste("block", seq_len(Nblock)), chains=paste("chain", chainset) ))
 for (iter in 1:n.generation) {
    for (i in chainset){

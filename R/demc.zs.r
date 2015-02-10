@@ -1,6 +1,6 @@
-DEMC.ZS <- function(Npop = 3, Z, FUN, X= matrix(Z[,1:Npop,drop=FALSE], ncol = Npop),
+demc.zs <- function(Npop = 3, Z, FUN, X,
                      blocks = list(seq_len(nrow(X))), f = 2.38, pSnooker= 0.1, pGamma1 = 0.1, n.generation = 10, 
- n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, ...){
+ n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # Z is the initial population: a matrix of number of parameters by number of individuals (d x m0)
 # X is the initial active population that will be evolved: a matrix of number of parameters by number of individuals (d x N)
@@ -51,6 +51,30 @@ DEMC.ZS <- function(Npop = 3, Z, FUN, X= matrix(Z[,1:Npop,drop=FALSE], ncol = Np
 #  Cajo ter Braak, Biometris, Wageningen UR, cajo.terbraak@wur.nl   23 October 2008
 #  
 #
+if ("demc"%in%class(Z)) {
+      is.update = TRUE
+      Z = Z$Draws
+      if (missing(X)) { 
+        X = X$X.final
+        logfitness_X = logfitness.X.final
+      }
+} else { # no update
+      if(!(is.matrix(Z)&& is.numeric(Z)&&is.matrix(X)&& is.numeric(X))) stop("demc: Z and X must be a numeric matrix")
+      is.update = FALSE
+      if (nrow(Z)>ncol(Z)) {
+        message("demc_zs: nrow of initial population (", 
+                nrow(Z),") larger than ncol (",ncol(Z),")\n Initial matrix transposed on the assumption that there are ", ncol(Z)," parameters")
+        Z = t(Z)
+      }
+      if (missing(X)) X = matrix(Z[,1:Npop,drop=FALSE], ncol = Npop)  
+}
+if (!missing(X)){
+  if (nrow(X)>ncol(X)) {
+    message("demc: nrow of initial population (", 
+            nrow(X),") larger than ncol (",ncol(X),")\n Initial matrix transposed on the assumption that there are ", ncol(X)," parameters")
+    X = t(X)
+}
+}
 M0 = mZ = ncol(Z)
 #Npop = ncol(X)
 #Npar = nrow(X)
@@ -60,7 +84,7 @@ accept = rep(NA,n.generation)
 chainset = seq_len(Npop)
 rr = NULL
 r_extra = 0
-logfitness_X = apply (X, 2, FUN, ...)
+if (missing(logfitness_X) && !(is.update && missing(X)))  logfitness_X = apply (X, 2, FUN, ...)
 Nblock = length(blocks)
 f = matrix(f,nrow=1,ncol=Nblock)
 Fs = f/sqrt(2)
