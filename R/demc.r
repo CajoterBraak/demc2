@@ -1,27 +1,58 @@
-demc <- function(X, FUN, blocks, f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, verbose = FALSE,logfitness_X, ...){
-# Differential Evolution Markov Chain applied to X with logposterior specified by FUN
-# X is the initial population: a matrix of number of parameters by number of individuals (k x Npop) or its transpose
-# 
-# FUN(theta ,...) with theta a k vector of parameter values and ... are other arguments to FUN (e.g. NULL, data, ..)
-# blocks: list of sets of indices for parameters, where each set contains the
-#              indices of variables in theta that are updated jointly
-#              If all elements of theta need to be sampled, 
-#              the union of sets needs to be equal to 1:k
-#              So, for  element iblock of the list,  
-#              blocks[[iblock]] contains indices of parameters that are jointly updated,
-#              e.g. blocks= list(); blocks[[1]] = c(1,3); blocks[[2]] = c(2,4)
-# f  scale factor for d = 1; for d>1 divided by sqrt(2d); if negative, scale is set to 1 (0.98 in fact) to allow for multimodality.
-#      can be a vector of length(blocks) to set differential scaling factors for blocks 
-# Value
-# $Draws k x (Npop*n) array  with n the number of retained simulations  [post process with monitor.DE.MC]
-#         matrix(Draws[p,],nrow= Npop) is an Npop x n array (for each p in 1:k)
-# $ accept.prob
-# $ X.final
-# $ logfitness.X.final
-# Reference:
-# ter Braak, C. J. F. (2006). A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution:
-# easy Bayesian computing for real parameter spaces. Statistics and Computing, 16, 239-249.
+#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak 2008)
+#'
+#' @description
+#' \code{demc} implements multi-chain adaptive MCMC on real parameter spaces via
+#'  Differential Evolution Markov Chain. It allows restart from a previous run.
+#' It is the only (?) adaptive MCMC method that is really Markovian and
+#' not just ergodic. Required input: starting position for each chain (X) 
+#' and a unnormalized logposterior function (FUN).
+#'
+#'@param X matrix of initial values or \code{demc} object resulting from a previous run. 
+#'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
+#' See Details for choice of N. 
+#'@param FUN function specifying the (unnormalized) logposterior or target. 
+#'FUN(theta ,...) with theta a d vector of parameter values and ...  other arguments to FUN (e.g. NULL, data, ..). The value of FUN should a single numeric value.
+#'@param blocks list of sets of parameters, where each set contains the
+#'indices (or names if X has rownames)  of variables in theta that are updated jointly,
+#' e.g.
+#' blocks= list(); blocks[[1]] = c(1,3); blocks[[2]] = c(2,4). The default uses a single block (joint update of all parameters).
+#'@param f value specifying the scale of the updates. 
+#' The actual scale used is f/sqrt(2k), where k the number of parameters in a block 
+#' (k=d if there only one block); 
+#' if negative, scale is set to 0.98 every \code{Nscale1}-th iteration (default 10)
+#' to allow for multimodality.
+#' f can be a vector of length(blocks) to set differential scaling factors for blocks. 
+#'@param n.generation integer, number of generations, each one generating ncol(X) samples.
+#'@param n.thin integer, thinning number, e.g 3 stores every 3rd generation (default 1, no thinning).
+#'@param n.burnin integer, number of initial generations that is not stored (default 0).
+#'@param eps real value (default 0). Standard deviation of the additional independent random normal step, 
+#' that guarantees that all parameter values can be reached.Important for the theory, not for practice.
+#'@param Nscale1 integer (default 10). Used if min(f)<0 so set the scale to 0.98 every Nscale1-th generation. See argument f.
+#'@param verbose logical (default FALSE). No used currently
+#'@param logfitness_X Can be missing. If set, logposterior values for the columns of X; can save some computation if known.
+#'@return an S3 object of class \code{demc} which is a list with 
+#'
+#' $Draws d x (Nchain*n) matrix  with n the number of retained simulations  [post process with summary or as.coda].
+#' matrix(Draws[p,],nrow= Nchain) is an Nchain x n array (for each parameter p in 1:d)
+#' 
+#' $accept.prob.mat accept probability matrix of blocks by chains. 
+#' 
+#' $X.final matrix of parameter values of the last generation (same shape as initial X).
+#' 
+#' $logfitness.X.final vector of logposterior values for columns of X.final (useful for restarting).
+#' 
+#' $Nchain number of chains.
+#' 
+#' $demc_zs  logical set of FALSE.
+#'@details \code{demc} This function implements the method of ter Braak (2006) using the differential evolution update (also known as the paralled direction sampling update). 
+#' See also \code{demc_zs} for an egodic variant with learning from the past. 
+#' The number of initial positions (N, columns of X) should be larger than the number of paramaters (d) in each block. The advice is N=2d. So fewer starting positions are required by specifying blocks with few (or even single) parameters in each block. 
+#'@references ter Braak, C. J. F. (2006). A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution: easy Bayesian computing for real parameter spaces. Statistics and Computing, 16, 239-249.
+#'
 
+
+
+demc <- function(X, FUN, blocks, f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, Nscale1=10, verbose = FALSE,logfitness_X, ...){
 if ("demc"%in%class(X)) {
   is.update = TRUE
   X = X$X.final
@@ -29,13 +60,12 @@ if ("demc"%in%class(X)) {
 } else {
   if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
   is.update = FALSE
-  if (nrow(X)>ncol(X)) {
-   message("demc: nrow of initial population (", 
-           nrow(X),") larger than ncol (",ncol(X),")\n Initial matrix transposed on the assumption that there are ", ncol(X)," parameters")
-   X = t(X)
-  } 
 }
 if (missing(blocks)) blocks= list(seq_len(nrow(X)))
+if (nrow(X)> max(sapply(blocks, length))) {
+  stop("demc: ncol of initial population (", 
+       ncol(X),") smaller than maximum block size (",max(sapply(blocks, length)),")\n Increase the number of starting positions (columns) or specify (smaller) blocks.")
+} 
 Npop = ncol(X)
 Npar = nrow(X)
 chainset = seq_len(Npop)
@@ -54,7 +84,7 @@ for (iter in 1:n.generation) {
      dsub = length(parset)  # dsubspace dimension of sampling
       # select to random different individuals (and different from i) in rr, a 2-vector
      rr = sample(chainset[-i], 2, replace = FALSE)
-     if (iter%%10) F = F2/sqrt(2*dsub) else F = F1
+     if (iter%%Nscale1) F = F2/sqrt(2*dsub) else F = F1
      x_prop = X[,i]
      x_prop_sub = X[parset,i] + F[iblock]*(X[parset,rr[1]]-X[parset,rr[2]])  +  eps*rnorm(dsub,0,1)
      x_prop[parset] = x_prop_sub
@@ -70,7 +100,7 @@ for (iter in 1:n.generation) {
      Draws = cbind(Draws,X)
   }
 } # n.generation
- out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop)
+ out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop, demc_zs = FALSE)
  class(out) <- c("demc")
  invisible(out)
 }

@@ -346,4 +346,4 @@ $mean.accept
 > 
 > proc.time()
    user  system elapsed 
-  17.90    0.67   19.46 
+  18.34    0.53   19.85 
