@@ -1,5 +1,51 @@
+#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak 2008)
+#'
+#' @description
+#' \code{demc} implements multi-chain adaptive MCMC on real parameter spaces via
+#'  Differential Evolution Markov Chain. It allows restart from a previous run.
+#' It is the only (?) adaptive MCMC method that is really Markovian and
+#' not just ergodic. Required input: starting position for each chain (X) 
+#' and a unnormalized logposterior function (FUN).
+#'
+#'@param Nchain number of (parallel) chains. 
+#'@param Z matrix of initial values or \code{demc} object resulting from a previous run. 
+#'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
+#' See Details for choice of N.
+#'@param X optional matrix of initial values (d x Nchain); default: X.final of a previous run or the first Nchain columns of Z if Z is a matrix.
+#'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
+#' See Details for choice of N. 
+#'@param f value specifying the scale of the updates (default 2.38). 
+#' The scale used is f/sqrt(2k), where k the number of parameters in a block 
+#' (k=d if there only one block) in the parallel update and k = 1 in the snooker update. 
+#' f can be a vector of length(blocks) to set differential scaling factors for blocks. 
+#'@param pSnooker probability of snooker update (default 0.1); 1-pSnooker: prob of the differential evolution (parallel) update
+#'@param eps.mult real value (default 0.2). It adds scaled uncorrelated noise
+#' to the proposal, by multiplying the scale of the update with a d-dimension uniform 
+#' variate [1-eps,1+eps].
+#' @inheritParams demc
+#'@return an S3 object of class \code{demc} which is a list with 
+#'
+#' $Draws d x (Nchain*n) matrix  with n the number of retained simulations  [post process with summary or as.coda].
+#' matrix(Draws[p,],nrow= Nchain) is an Nchain x n array (for each parameter p in 1:d)
+#' 
+#' $accept.prob.mat accept probability matrix of blocks by chains. 
+#' 
+#' $X.final matrix of parameter values of the last generation (same shape as initial X).
+#' 
+#' $logfitness.X.final vector of logposterior values for columns of X.final (useful for restarting).
+#' 
+#' $Nchain number of chains.
+#' 
+#' $demc_zs  logical set of FALSE.
+#'@details \code{demc_zs} This function implements the method of ter Braak & Vrugt (2008) using learning of the past, the differential evolution (parelle direction) update 
+#' and the snooker update. 
+#' The number of initial positions (N, columns of Z) should be much larger than the number of paramaters (d)
+#' in each block. The advice is N=10d. So fewer initial values are required by specifying blocks with few (or even single) parameters in each block. 
+#' 
+#'@references ter  Braak C. J. F., and Vrugt J. A. (2008). Differential Evolution Markov Chain with snooker updater and fewer chains. Statistics and Computing, 18 (4), 435-446. \url{http://dx.doi.org/10.1007/s11222-008-9104-9}
+
 demc_zs <- function(Nchain = 3, Z, FUN, X,
-                     blocks, f = 2.38, pSnooker= 0.1, pGamma1 = 0.1, n.generation = 10, 
+                     blocks, f = 2.38, pSnooker= 0.1, p.f.is.1 = 0.1, n.generation = 10, 
  n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # Z is the initial population: a matrix of number of parameters by number of individuals (d x m0)
@@ -101,7 +147,7 @@ M0 = mZ = ncol(Z)
 #Nchain = ncol(X)
 #Npar = nrow(X)
 #Npar12  =(Npar - 1)/2  # factor for Metropolis ratio DE Snooker update
-F1 = 1.0
+F1 = 0.98
 accept = rep(NA,n.generation)
 chainset = seq_len(Nchain)
 rr = NULL
@@ -126,7 +172,8 @@ for (iter in 1:n.generation) {
          # }                                                  # no real advantage and precludes parallel computing
           x_z = X[ parset,i] - z[parset]
           D2 = max(sum(x_z*x_z),1.0e-300)
-          gamma_snooker = runif(1, min=Fs[iblock]-0.5,max=Fs[iblock]+0.5)
+          #gamma_snooker = runif(1, min=Fs[iblock]-0.5,max=Fs[iblock]+0.5)
+          gamma_snooker = Fs[iblock] * runif(1, min=1-eps.mult,max=1+eps.mult)
           #gamma_snooker =1.7
           projdiff = sum((Z[ parset,rr[1]] -Z[ parset,rr[2]]) *x_z)/D2  # inner_product of difference with x_z / squared norm x_z
           x_prop = X[,i]
@@ -138,7 +185,7 @@ for (iter in 1:n.generation) {
           r_extra = Npar12 * (log(D2prop) - log(D2))   # Npar12 = extra term in logr for accept - reject ratio
       } else {
       # DE-parallel direction update
-         if ( runif(1)< pGamma1 ) { gamma_par = F1 # to be able to jump between modes
+         if ( runif(1)< p.f.is.1 ) { gamma_par = F1 # to be able to jump between modes
           } else {
           gamma_par = (f[iblock]/sqrt(2*dsub)) * runif(dsub, min=1-eps.mult, max=1+eps.mult)    # multiplicative error to be applied to the difference
            # gamma_par = F2 

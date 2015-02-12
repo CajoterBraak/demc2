@@ -15,6 +15,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+Warning: namespace 'demc' is not available and has been replaced
+by .GlobalEnv when processing object 'logPosterior'
 [Previously saved workspace restored]
 
 > #  Adaptive MCMC via demc
@@ -38,9 +40,9 @@ The following objects are masked from 'package:LaplacesDemon':
 
     dinvchisq, rinvchisq
 
-> library(demc)
+> library(demc2)
 
-Attaching package: 'demc'
+Attaching package: 'demc2'
 
 The following objects are masked from 'package:LaplacesDemon':
 
@@ -84,7 +86,7 @@ function(theta, data){
   } else logpost = -Inf # because logprior = -Inf
   logpost
 }
-<environment: namespace:demc>
+<environment: namespace:demc2>
 > # check whether the logposterior function works
 > logposterior_sigma2(c(1,1,1),data = Data)
 [1] -36.96542
@@ -108,40 +110,40 @@ function(theta, data){
 > summary(Draws0)
 $parameters
             mean        sd      2.5%       25%       50%       75%    97.5%
-b1     0.9188062 0.3758774 0.2644072 0.7168202 0.9401699 1.1314331 1.522188
-b2     1.9870668 0.4528385 1.0774219 1.7754198 2.0156018 2.2583178 2.701398
-sigma2 0.7479468 0.8688238 0.3240558 0.4600824 0.5744077 0.7580387 1.884886
+b1     0.9299003 0.4332644 0.2408796 0.7611889 0.9334676 1.1384200 1.588176
+b2     1.9721228 0.4812701 1.1289506 1.7501853 1.9761839 2.2300506 2.729891
+sigma2 0.7373672 0.8070769 0.3144766 0.4766408 0.5773035 0.7116716 2.714247
             Rhat n.eff
-b1     0.9901037  6000
-b2     1.0213738  5100
-sigma2 1.3543568  1800
+b1     0.9770985  6000
+b2     1.0192264  5200
+sigma2 1.4285370  1700
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
-  block 1   0.266   0.305   0.289   0.273   0.259   0.277
+  block 1   0.275   0.324   0.276   0.304   0.262   0.346
 
 $mean.accept
-[1] 0.2781667
+[1] 0.2978333
 
 > summary(Draws0, keep.all = FALSE)
 $parameters
             mean        sd      2.5%       25%       50%       75%    97.5%
-b1     0.9384365 0.2725903 0.3921533 0.7495376 0.9342394 1.1133250 1.486256
-b2     2.0057563 0.3284051 1.3172731 1.7969916 2.0157115 2.2321267 2.593751
-sigma2 0.5814804 0.1931267 0.3057732 0.4385823 0.5400512 0.6757478 1.071744
-            Rhat n.eff
-b1     0.9917049  3000
-b2     0.9903554  3000
-sigma2 0.9856502  3000
+b1     0.9341090 0.2705190 0.4180626 0.7611167 0.9258587 1.1095824 1.493291
+b2     1.9848487 0.3334709 1.3678364 1.7493970 1.9654486 2.2054139 2.653762
+sigma2 0.6000728 0.2213930 0.3314654 0.4701720 0.5471361 0.6787491 1.233368
+           Rhat n.eff
+b1     1.012487  2700
+b2     1.001234  3000
+sigma2 0.979123  3000
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
-  block 1   0.266   0.305   0.289   0.273   0.259   0.277
+  block 1   0.275   0.324   0.276   0.304   0.262   0.346
 
 $mean.accept
-[1] 0.2781667
+[1] 0.2978333
 
 > 
 > 
@@ -155,7 +157,7 @@ function(theta, data){
   logposterior_sigma2(theta_original, data = data) + theta[3]   # theta[3] = log(sigma2)
   # the second term stems from the Jacobian, slide LL122, section 2.9 of the LL book
 }
-<environment: namespace:demc>
+<environment: namespace:demc2>
 > logPosterior <- logposterior_logsigma2
 > logPosterior(Z[,1],data = Data)
        b1 
@@ -165,22 +167,22 @@ function(theta, data){
 > Draws1 <- demc(Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin =0 )
 > summary(Draws1)
 $parameters
-                mean        sd      2.5%        25%        50%        75%
-b1         0.9585418 0.3818033  0.361985  0.7843201  0.9761951  1.1504852
-b2         2.0303909 0.4459466  1.339019  1.8184039  2.0420644  2.2617535
-logsigma2 -0.5495896 0.4491399 -1.166411 -0.8157426 -0.6188663 -0.3916864
-              97.5%      Rhat n.eff
-b1        1.5615666 0.9992702  6000
-b2        2.7519281 1.0045686  6000
-logsigma2 0.5958656 1.3282455  1900
+                mean        sd       2.5%        25%        50%       75%
+b1         0.9338149 0.3901711  0.2969366  0.7863103  0.9705140  1.144006
+b2         2.0028720 0.4486883  1.1666742  1.8123350  2.0425634  2.259969
+logsigma2 -0.5091474 0.4154933 -1.1535825 -0.7884196 -0.5435562 -0.300159
+             97.5%     Rhat n.eff
+b1        1.499422 1.154387  2700
+b2        2.659609 1.089024  3400
+logsigma2 0.330451 1.195804  2400
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3 chain 4 chain 5 chain 6
-  block 1    0.31   0.311   0.306   0.305   0.292   0.295
+  block 1   0.308   0.326   0.325   0.292   0.306   0.325
 
 $mean.accept
-[1] 0.3031667
+[1] 0.3136667
 
 > dim(Draws1$Draws)
 [1]    3 6000
@@ -211,22 +213,22 @@ Loading required package: lattice
 > Draws2.0 <- demc_zs(Nchain, Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin = 0 )
 > summary(Draws2.0, keep.all = TRUE)
 $parameters
-                mean        sd       2.5%        25%        50%        75%
-b1         0.9656763 0.2755743  0.4176638  0.7861657  0.9617526  1.1459825
-b2         2.0398920 0.3150162  1.4147593  1.8360428  2.0462517  2.2547905
-logsigma2 -0.5820571 0.3202039 -1.1770271 -0.7975057 -0.6056576 -0.3703678
-              97.5%      Rhat n.eff
-b1        1.5012869 0.9964163  6000
-b2        2.6250960 0.9973691  6000
-logsigma2 0.0697204 1.0040802  5900
+                mean        sd      2.5%        25%        50%        75%
+b1         0.9576777 0.2731775  0.439819  0.7775036  0.9470804  1.1425614
+b2         2.0254341 0.3193484  1.389742  1.8035081  2.0212121  2.2321181
+logsigma2 -0.5985409 0.3012052 -1.157131 -0.8132092 -0.6010074 -0.4049199
+               97.5%     Rhat n.eff
+b1        1.49920880 1.004598  5900
+b2        2.65066189 1.014931  5700
+logsigma2 0.02537283 1.012676  5700
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3
-  block 1   0.341  0.3285  0.3405
+  block 1  0.3035  0.3205   0.311
 
 $mean.accept
-[1] 0.3366667
+[1] 0.3116667
 
 > dim(Draws2.0$Draws)
 [1]    3 6000
@@ -241,21 +243,21 @@ $mean.accept
 > summary(Draws2, keep.all = TRUE)
 $parameters
                 mean        sd       2.5%        25%        50%        75%
-b1         0.9602552 0.3325500  0.3854914  0.7848623  0.9692641  1.1498769
-b2         2.0283134 0.3847045  1.3764769  1.8161319  2.0369440  2.2549059
-logsigma2 -0.5738435 0.3949069 -1.1728537 -0.8228942 -0.6210230 -0.3901465
-              97.5%      Rhat n.eff
-b1        1.5216754 1.0078920 12000
-b2        2.6789440 0.9793907 12000
-logsigma2 0.2336818 1.1835618  7600
+b1         0.9427755 0.3439337  0.3558023  0.7730537  0.9540318  1.1376348
+b2         2.0217329 0.3938213  1.3137203  1.8209494  2.0415782  2.2597306
+logsigma2 -0.5404724 0.3765798 -1.1535439 -0.8037410 -0.5721852 -0.3273079
+              97.5%     Rhat n.eff
+b1        1.5165871 1.084187  9300
+b2        2.6783826 1.057888  9900
+logsigma2 0.1879863 1.127013  8400
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3
-  block 1   0.289  0.2905   0.309
+  block 1   0.304     0.3  0.2935
 
 $mean.accept
-[1] 0.2961667
+[1] 0.2991667
 
 > dim(Draws2$Draws) # 2*Niter
 [1]     3 12000
@@ -267,21 +269,21 @@ In demc_zs(Nchain, Draws2, logPosterior, data = Data, n.generation = floor(N.ite
 > summary(Draws2.B, keep.all = TRUE)
 $parameters
                 mean        sd       2.5%        25%        50%        75%
-b1         0.9614142 0.3110908  0.4086388  0.7848668  0.9685460  1.1460368
-b2         2.0256940 0.3618316  1.3896055  1.8123884  2.0327250  2.2472552
-logsigma2 -0.5832928 0.3684958 -1.1829416 -0.8201027 -0.6157522 -0.3937694
+b1         0.9457336 0.3216991  0.3701184  0.7738951  0.9536007  1.1331374
+b2         2.0225426 0.3745216  1.3233770  1.8129847  2.0383860  2.2525966
+logsigma2 -0.5540917 0.3634815 -1.1549678 -0.8120483 -0.5814978 -0.3368562
               97.5%     Rhat n.eff
-b1        1.5050190 1.013253 17000
-b2        2.6633513 1.023573 16000
-logsigma2 0.1489964 1.162017 10000
+b1        1.5099374 1.082757 13000
+b2        2.6830606 1.051820 14000
+logsigma2 0.1691377 1.109087 12000
 
 $accept.prob
          chains
 blocks    chain 1   chain 2   chain 3   chain 4
-  block 1   0.316 0.2906667 0.2953333 0.3126667
+  block 1   0.292 0.2886667 0.3053333 0.3013333
 
 $mean.accept
-[1] 0.3036667
+[1] 0.2968333
 
 > dim(Draws2.B$Draws) # 2*Niter
 [1]     3 18000
@@ -293,21 +295,21 @@ $mean.accept
 > summary(Draws3, keep.all = FALSE)
 $parameters
                 mean        sd       2.5%        25%        50%        75%
-b1         0.9441559 0.2762653  0.4054245  0.7669165  0.9422174  1.1271128
-b2         2.0032326 0.3245293  1.3518419  1.7899829  2.0149590  2.2186256
-logsigma2 -0.5710019 0.3333638 -1.1808492 -0.8006060 -0.5840099 -0.3509721
+b1         0.9454936 0.2740437  0.4023706  0.7641152  0.9420736  1.1261271
+b2         2.0277764 0.3231137  1.3873309  1.8145517  2.0237790  2.2368468
+logsigma2 -0.5965794 0.3275875 -1.1443224 -0.8225377 -0.6237840 -0.3928653
               97.5% Rhat n.eff
-b1        1.5163366   NA    NA
-b2        2.6469150   NA    NA
-logsigma2 0.1105224   NA    NA
+b1        1.4827599   NA    NA
+b2        2.6592852   NA    NA
+logsigma2 0.1217897   NA    NA
 
 $accept.prob
          chains
 blocks      chain 1
-  block 1 0.3151667
+  block 1 0.2993333
 
 $mean.accept
-[1] 0.3151667
+[1] 0.2993333
 
 > dim(Draws3$Draws) # 3*Niter 
 [1]     3 18000
@@ -322,23 +324,23 @@ $mean.accept
 > #monitor.DE.MC(Draws.DEMCZS3$Draws, keep.all = TRUE , m= Nchain)
 > summary(Draws4, keep.all = TRUE)
 $parameters
-                mean        sd       2.5%        25%        50%       75%
-b1         0.9489210 0.3283900  0.3850997  0.7815946  0.9551892  1.130087
-b2         2.0214599 0.3886982  1.3390186  1.8148251  2.0239379  2.244079
-logsigma2 -0.5632574 0.3942818 -1.1664107 -0.8142198 -0.6055676 -0.380722
-              97.5%      Rhat n.eff
-b1        1.5140763 1.0167603 11000
-b2        2.6916471 0.9869284 12000
-logsigma2 0.2690076 1.1902859  7600
+                mean        sd       2.5%        25%        50%        75%
+b1         0.9647433 0.3334849  0.3698538  0.8090730  0.9836695  1.1596686
+b2         2.0347274 0.3896303  1.3152716  1.8331923  2.0538248  2.2762766
+logsigma2 -0.5474801 0.3718213 -1.1579810 -0.7950119 -0.5775224 -0.3470646
+              97.5%     Rhat n.eff
+b1        1.5094440 1.096293  9000
+b2        2.6692734 1.056828 10000
+logsigma2 0.1691377 1.131843  8400
 
 $accept.prob
          chains
 blocks    chain 1 chain 2 chain 3
-  block 1  0.2705   0.257  0.2595
-  block 2  0.2890   0.295  0.2860
+  block 1  0.2345  0.2345  0.2460
+  block 2  0.2925  0.2905  0.2935
 
 $mean.accept
-[1] 0.2761667
+[1] 0.26525
 
 > dim(Draws4$Draws) # Niter 
 [1]     3 12000
@@ -346,4 +348,4 @@ $mean.accept
 > 
 > proc.time()
    user  system elapsed 
-  18.34    0.53   19.85 
+  17.89    0.39   18.54 

@@ -3,7 +3,7 @@ rm(list=ls(all=TRUE))
 
 library(LaplacesDemon) # or geoR for dinvchisq (and rinvchisq, rmvn)
 library(geoR)
-library(demc)
+library(demc2)
 # example of Bayesian linear regresssion without intercept
 # generate some data 
 set.seed(13451)

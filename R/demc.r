@@ -17,17 +17,17 @@
 #' e.g.
 #' blocks= list(); blocks[[1]] = c(1,3); blocks[[2]] = c(2,4). The default uses a single block (joint update of all parameters).
 #'@param f value specifying the scale of the updates. 
-#' The actual scale used is f/sqrt(2k), where k the number of parameters in a block 
+#' The scale used is f/sqrt(2k), where k the number of parameters in a block 
 #' (k=d if there only one block); 
-#' if negative, scale is set to 0.98 every \code{Nscale1}-th iteration (default 10)
-#' to allow for multimodality.
 #' f can be a vector of length(blocks) to set differential scaling factors for blocks. 
 #'@param n.generation integer, number of generations, each one generating ncol(X) samples.
 #'@param n.thin integer, thinning number, e.g 3 stores every 3rd generation (default 1, no thinning).
 #'@param n.burnin integer, number of initial generations that is not stored (default 0).
-#'@param eps real value (default 0). Standard deviation of the additional independent random normal step, 
-#' that guarantees that all parameter values can be reached.Important for the theory, not for practice.
-#'@param Nscale1 integer (default 10). Used if min(f)<0 so set the scale to 0.98 every Nscale1-th generation. See argument f.
+#'@param eps.add real value . Standard deviation of the (additive) independent random normal step added to the DE update. 
+#' that guarantees that all parameter values can be reached.
+#' Must be postive to garantee that all positions in the space can be reached.
+#' For targets (posteriors) without gaps, it can set small or even to 0 (default 0). 
+#'@param p.f.is.1 probability (default 0.1) of using scale 0.98 in the parallel update instead of f/sqrt(2d). Allows exploration of multi-modal posteriors.
 #'@param verbose logical (default FALSE). No used currently
 #'@param logfitness_X Can be missing. If set, logposterior values for the columns of X; can save some computation if known.
 #'@return an S3 object of class \code{demc} which is a list with 
@@ -47,12 +47,12 @@
 #'@details \code{demc} This function implements the method of ter Braak (2006) using the differential evolution update (also known as the paralled direction sampling update). 
 #' See also \code{demc_zs} for an egodic variant with learning from the past. 
 #' The number of initial positions (N, columns of X) should be larger than the number of paramaters (d) in each block. The advice is N=2d. So fewer starting positions are required by specifying blocks with few (or even single) parameters in each block. 
-#'@references ter Braak, C. J. F. (2006). A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution: easy Bayesian computing for real parameter spaces. Statistics and Computing, 16, 239-249.
+#'@references ter Braak, C. J. F. (2006). A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution: easy Bayesian computing for real parameter spaces. Statistics and Computing, 16, 239-249.\url{http://edepot.wur.nl/26336}
 #'
 
 
 
-demc <- function(X, FUN, blocks, f = -2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps = 0, Nscale1=10, verbose = FALSE,logfitness_X, ...){
+demc <- function(X, FUN, blocks, f = 2.38, n.generation = 1000, n.thin = 1, n.burnin = 0, eps.add = 0, p.f.is.1= 0.1, verbose = FALSE,logfitness_X, ...){
 if ("demc"%in%class(X)) {
   is.update = TRUE
   X = X$X.final
@@ -71,7 +71,7 @@ Npar = nrow(X)
 chainset = seq_len(Npop)
 Nblock = length(blocks)
 F2 =  matrix(abs(f),nrow=1,ncol=Nblock)
-if (min(f)>0) F1 = F2 else F1 = rep(0.98,Nblock)
+F1 = rep(0.98,Nblock)
 Draws = NULL
 accept = matrix(rep(NA,n.generation*Nblock),nrow = n.generation, ncol= Nblock)
 if (missing(logfitness_X) && !is.update) logfitness_X = apply (X, 2, FUN, ...)
@@ -84,9 +84,9 @@ for (iter in 1:n.generation) {
      dsub = length(parset)  # dsubspace dimension of sampling
       # select to random different individuals (and different from i) in rr, a 2-vector
      rr = sample(chainset[-i], 2, replace = FALSE)
-     if (iter%%Nscale1) F = F2/sqrt(2*dsub) else F = F1
+     if ( runif(1) < p.f.is.1 )  F = F1 else  F2/sqrt(2*dsub)
      x_prop = X[,i]
-     x_prop_sub = X[parset,i] + F[iblock]*(X[parset,rr[1]]-X[parset,rr[2]])  +  eps*rnorm(dsub,0,1)
+     x_prop_sub = X[parset,i] + F[iblock]*(X[parset,rr[1]]-X[parset,rr[2]])  +  eps.add*rnorm(dsub,0,1)
      x_prop[parset] = x_prop_sub
      logfitness_x_prop = FUN(x_prop,  ...)
      if ((logfitness_x_prop - logfitness_X[i] )> log(runif(1)) ){
