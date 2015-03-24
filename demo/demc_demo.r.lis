@@ -15,8 +15,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-Warning: namespace 'demc' is not available and has been replaced
-by .GlobalEnv when processing object 'logPosterior'
 [Previously saved workspace restored]
 
 > #  Adaptive MCMC via demc
@@ -348,4 +346,4 @@ $mean.accept
 > 
 > proc.time()
    user  system elapsed 
-  17.89    0.39   18.54 
+  45.13    0.98   50.18 

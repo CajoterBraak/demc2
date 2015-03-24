@@ -1,6 +1,6 @@
 summary.demc <- function (a, trans=NULL, keep.all=TRUE, Rupper.keep=FALSE) {
   # adapted from monitor from Andrew Gelman's monitor
-  # a in this interface is k x (m x k) array [ from DE.MC] instead of n x m x k
+  # a in this interface is k x (m x n) array [ from DE.MC] instead of n x m x k
   # with k the number of parameters, and m the number of chains
   #
   # If keep.all=TRUE:  a is a n x m x k array:

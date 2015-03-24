@@ -1,11 +1,11 @@
-#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak 2008)
+#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak & Vrugt 2008)
 #'
 #' @description
-#' \code{demc} implements multi-chain adaptive MCMC on real parameter spaces via
-#'  Differential Evolution Markov Chain. It allows restart from a previous run.
-#' It is the only (?) adaptive MCMC method that is really Markovian and
-#' not just ergodic. Required input: starting position for each chain (X) 
-#' and a unnormalized logposterior function (FUN).
+#' \code{demc_zs} implements multi-chain adaptive MCMC on real parameter spaces via
+#'  Differential Evolution Markov Chain with learning from the past and the snooker update.
+#'  It allows restart from a previous run.
+#'  Required input: starting position for each chain (X) 
+#'  and a unnormalized logposterior function (FUN).
 #'
 #'@param Nchain number of (parallel) chains. 
 #'@param Z matrix of initial values or \code{demc} object resulting from a previous run. 
@@ -133,9 +133,9 @@ if ("demc"%in%class(Z)) {
             message("demc_zs: nrow of initial population X (=", 
                     nrow(X),") equal to Nchain (=",Nchain,")\n  Matrix X transposed on the assumption that there are ", ncol(X)," parameters")
             X = t(X)
-          }
-        } else stop("demc_zs: ncol of initial population X(", 
-                    nrow(X),") not equal to Nchain (=",Nchain,")\n  and there appear ", nrow(Z)," parameters") 
+          } else stop("demc_zs: ncol of initial population X(", 
+                     nrow(X),") not equal to Nchain (=",Nchain,")\n  and there appear ", nrow(Z)," parameters") 
+        } 
 }
       
 if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
@@ -200,8 +200,8 @@ for (iter in 1:n.generation) {
          x_prop[parset] = x_prop_sub
          r_extra = 0
         }
-       #logfitness_x_prop = FUN(x_prop,  ...)
-       logfitness_x_prop = FUN(x_prop,  data = Data)
+       logfitness_x_prop = FUN(x_prop,  ...)
+       #logfitness_x_prop = FUN(x_prop,  data = Data)
        logr =  logfitness_x_prop - logfitness_X[i]
       # print(c(logfitness_X[i], logfitness_x_prop ,logr,r_extra))
        if (!is.na(logr) & (logr + r_extra)> log(runif(1)) ){

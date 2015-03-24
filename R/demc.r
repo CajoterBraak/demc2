@@ -1,4 +1,4 @@
-#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak 2008)
+#' @title generates MCMC samples using Differential Evolution Markov Chain (ter Braak 2006)
 #'
 #' @description
 #' \code{demc} implements multi-chain adaptive MCMC on real parameter spaces via
