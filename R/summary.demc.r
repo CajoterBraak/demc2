@@ -1,4 +1,4 @@
-summary.demc <- function (a, trans=NULL, keep.all=TRUE, Rupper.keep=FALSE) {
+summary.demc <- function (a, trans=NULL, keep.all=0.9, Rupper.keep=FALSE) {
   # adapted from monitor from Andrew Gelman's monitor
   # a in this interface is k x (m x n) array [ from DE.MC] instead of n x m x k
   # with k the number of parameters, and m the number of chains
@@ -23,9 +23,11 @@ summary.demc <- function (a, trans=NULL, keep.all=TRUE, Rupper.keep=FALSE) {
   #  nparams <- ifelse (length(dim(a))<3, 1, dim(a)[length(dim(a))])
   nparams <- nrow(a)
   #  if (length(dim(a))==2) a <- array (a, c(dim(a),1))
-  if (!keep.all){
-    half <- floor(ncol(a)/2)
-    a <- a[, (half+1): (2*half),drop=FALSE]
+  if (is.logical(keep.all)) keep.all = ifelse(keep.all,1,0.5)
+  if (keep.all < 1){
+    n.gen = ncol(a)/m
+    start = m * (floor((1-keep.all)*n.gen)+1)
+    a <- a[, (start+1) : ncol(a),drop=FALSE]
   }
 if (m>1){
   if (is.null(trans))

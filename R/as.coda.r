@@ -6,7 +6,7 @@ as.coda <-function(Draws.DEMC){
   Chain= list()
   for (i in seq_len(Nchain)){
     chain.i = seq(from=i, to = ncol(Draws), by=Nchain)
-    Chain[[i]]=as.mcmc(t(Draws[,chain.i]))
+    Chain[[i]]=as.mcmc(t(Draws[,chain.i,drop=FALSE]))
   }
   mcmc.list(Chain)
 }
