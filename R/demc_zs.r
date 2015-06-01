@@ -218,7 +218,7 @@ for (iter in 1:n.generation) {
 
 } # n.generation
  if (!is.update) Z = Z[,-(1:(M0 + Nchain* floor(n.burnin/n.thin))),drop = FALSE]
- out = list(Draws=  Z , accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Nchain, demc_zs = TRUE)
+ out = list(Draws=  Z , accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Nchain, n.generation= ncol(Z)/Nchain, demc_zs = TRUE)
  class(out) <- c("demc")
  invisible(out)
 }

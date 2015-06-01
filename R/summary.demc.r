@@ -1,3 +1,19 @@
+#' @title Summarizes a demc object
+#'
+#'@param object \code{demc} object
+#'@param trans a vector of length k (default NULL):  "" if no transformation, or "log" or "logit"
+# If NULL, it will be set to "log" for parameters that
+# are all-positive and 0 otherwise.
+#'@param Rupper.keep   logical (default FALSE); if TRUE:  keep Rupper,  (Otherwise don't display it.)
+
+#'@inheritParams draws.demc
+#'@return an S3 object of class \code{demc} which is a list with 
+#'
+#' $summary 
+#' $accept.prob.mat  
+#'@details  The summary is adapted from the monitor function written by Andrew Gelman.
+
+
 summary.demc <- function (a, trans=NULL, keep.all=0.9, Rupper.keep=FALSE) {
   # adapted from monitor from Andrew Gelman's monitor
   # a in this interface is k x (m x n) array [ from DE.MC] instead of n x m x k

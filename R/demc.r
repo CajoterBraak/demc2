@@ -100,7 +100,7 @@ for (iter in 1:n.generation) {
      Draws = cbind(Draws,X)
   }
 } # n.generation
- out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop, demc_zs = FALSE)
+ out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop, n.generation= ncol(Z)/Nchain, demc_zs = FALSE)
  class(out) <- c("demc")
  invisible(out)
 }
