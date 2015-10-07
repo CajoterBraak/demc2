@@ -53,7 +53,7 @@ logposterior_logsigma2
 logPosterior <- logposterior_logsigma2
 logPosterior(Z[,1],data = Data)
 #Ex DEMC.2
-N.iter = 60000
+N.iter = 6000
 Draws1 <- demc(Z, logPosterior, data=Data, n.generation = floor(N.iter/Nchain), n.thin = 1, n.burnin =0 )
 summary(Draws1)
 dim(Draws1$Draws)
