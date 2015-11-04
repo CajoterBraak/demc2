@@ -45,8 +45,8 @@
 #'@references ter  Braak C. J. F., and Vrugt J. A. (2008). Differential Evolution Markov Chain with snooker updater and fewer chains. Statistics and Computing, 18 (4), 435-446. \url{http://dx.doi.org/10.1007/s11222-008-9104-9}
 
 demc_zs_p <- function(Nchain = 3, Z, FUN, X,
-                      blocks, f = 2.38, pSnooker= 0.1, p.f.is.1 = 0.1, n.generation = 10,
- n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, pClust = NULL,...){
+                      blocks, f = 2.38, pSnooker= 0.1, p.f.is.1 = 0.1, n.generation = 1000,
+ n.thin, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, pClust = NULL,...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # Z is the initial population: a matrix of number of parameters by number of individuals (d x m0)
 # X is the initial active population that will be evolved: a matrix of number of parameters by number of individuals (d x N)

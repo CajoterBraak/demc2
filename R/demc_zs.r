@@ -13,7 +13,11 @@
 #' See Details for choice of N.
 #'@param X optional matrix of initial values (d x Nchain); default: X.final of a previous run or the first Nchain columns of Z if Z is a matrix.
 #'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
-#' See Details for choice of N. 
+#' See Details for choice of N.
+#' @param n.thin integer, thinning number, e.g 3 stores every 3rd generation (default 1, no thinning).
+#' In \code{demc_zs} and \code{demc_zs_p} this value should be set as large as possible, 
+#' because of autocorrelation that makes the method to adapt to quickly/to the wrong scale and orientation
+#' as the many correlated samples overrule any decent initial sample
 #'@param f value specifying the scale of the updates (default 2.38). 
 #' The scale used is f/sqrt(2k), where k the number of parameters in a block 
 #' (k=d if there only one block) in the parallel update and k = 1 in the snooker update. 
@@ -22,6 +26,7 @@
 #'@param eps.mult real value (default 0.2). It adds scaled uncorrelated noise
 #' to the proposal, by multiplying the scale of the update with a d-dimension uniform 
 #' variate [1-eps,1+eps].
+
 #' @inheritParams demc
 #'@return an S3 object of class \code{demc} which is a list with 
 #'
@@ -45,8 +50,8 @@
 #'@references ter  Braak C. J. F., and Vrugt J. A. (2008). Differential Evolution Markov Chain with snooker updater and fewer chains. Statistics and Computing, 18 (4), 435-446. \url{http://dx.doi.org/10.1007/s11222-008-9104-9}
 
 demc_zs <- function(Nchain = 3, Z, FUN, X,
-                     blocks, f = 2.38, pSnooker= 0.1, p.f.is.1 = 0.1, n.generation = 10, 
- n.thin = 1, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, ...){
+                     blocks, f = 2.38, pSnooker= 0.1, p.f.is.1 = 0.1, n.generation = 1000, 
+ n.thin, n.burnin = 0, eps.mult =0.2,eps.add = 0, verbose = FALSE, logfitness_X, ...){
 # Differential Evolution Markov Chain applied to X with logposterior specified by FUN
 # Z is the initial population: a matrix of number of parameters by number of individuals (d x m0)
 # X is the initial active population that will be evolved: a matrix of number of parameters by number of individuals (d x N)
