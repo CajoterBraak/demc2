@@ -6,7 +6,6 @@
 #' It is the only (?) adaptive MCMC method that is really Markovian and
 #' not just ergodic. Required input: starting position for each chain (X) 
 #' and a unnormalized logposterior function (FUN).
-#'
 #'@param X matrix of initial values or \code{demc} object resulting from a previous run. 
 #'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
 #' See Details for choice of N. 
@@ -60,6 +59,11 @@ if ("demc"%in%class(X)) {
 } else {
   if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
   is.update = FALSE
+  if (nrow(X)>ncol(X)) {
+    message("demc: nrow of initial population (", 
+            nrow(X),") larger than ncol (",ncol(X),")\n Initial matrix transposed on the assumption that there are ", ncol(Z)," parameters")
+    X = t(X)
+  }
 }
 if (missing(blocks)) blocks= list(seq_len(nrow(X)))
 if (nrow(X)> max(sapply(blocks, length))) {
@@ -100,7 +104,7 @@ for (iter in 1:n.generation) {
      Draws = cbind(Draws,X)
   }
 } # n.generation
- out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop, n.generation= ncol(Z)/Nchain, demc_zs = FALSE)
+ out = list(Draws= Draws, accept.prob.mat= Naccept/n.generation, X.final = X, logfitness.X.final = logfitness_X, Nchain=Npop, n.generation= n.generation, demc_zs = FALSE)
  class(out) <- c("demc")
  invisible(out)
 }

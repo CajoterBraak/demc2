@@ -5,8 +5,7 @@
 #'If logical the first half of the draws are discarded. Default 0.9.
 #'@param thin integer (default 1), keep every thin-th draw
 #'@return a dataframe with parameters as variables and as rows the kept samples
-#'@export draws.demc
-
+#'
 draws.demc <- function(object, keep.all=0.9, thin = 1){
   if ("demc"%in%class(object)) {
     a = object$Draws
