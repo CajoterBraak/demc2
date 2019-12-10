@@ -7,8 +7,8 @@
 #' not just ergodic. Required input: starting position for each chain (X) 
 #' and a unnormalized logposterior function (FUN).
 #'@param X matrix of initial values or \code{demc} object resulting from a previous run. 
-#'If matrix, initial parameter values for N chains (columns) for each of the parameters (rows).
-#' See Details for choice of N. 
+#'If matrix, initial parameter values for N chains (rows) for each of the parameters (columns).
+#' See Details for choice of N.
 #'@param FUN function specifying the (unnormalized) logposterior or target. 
 #'FUN(theta ,...) with theta a d vector of parameter values and ...  other arguments to FUN (e.g. NULL, data, ..). The value of FUN should a single numeric value.
 #'@param blocks list of sets of parameters, where each set contains the
@@ -60,9 +60,12 @@ if ("demc"%in%class(X)) {
   if(!(is.matrix(X)&& is.numeric(X))) stop("demc: X must be a numeric matrix")
   is.update = FALSE
   if (nrow(X)>ncol(X)) {
-    message("demc: nrow of initial population (", 
-            nrow(X),") larger than ncol (",ncol(X),")\n Initial matrix transposed on the assumption that there are ", ncol(Z)," parameters")
+    message("demc: initial population has size ", 
+            nrow(X),". Number of parameters is ",ncol(X),".")
     X = t(X)
+  } else {
+    message("demc: initial population has size ", 
+            ncol(X),". Number of parameters is ",nrow(X),".")    
   }
 }
 if (missing(blocks)) blocks= list(seq_len(nrow(X)))

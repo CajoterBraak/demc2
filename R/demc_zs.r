@@ -126,9 +126,13 @@ if ("demc"%in%class(Z)) {
       if(!(is.matrix(Z)&& is.numeric(Z))) stop("demc: Z and X must be a numeric matrix")
       is.update = FALSE
       if (nrow(Z)>ncol(Z)) {
-        message("demc_zs: nrow of initial population (", 
-                nrow(Z),") larger than ncol (",ncol(Z),")\n Initial matrix transposed on the assumption that there are ", ncol(Z)," parameters")
+        message("demc: initial population has size ", 
+                nrow(Z),". Number of parameters is ",ncol(Z),".")
         Z = t(Z)
+      } else {
+        message("demc: initial population has size ", 
+                ncol(Z),". Number of parameters is ",nrow(Z),".")
+        
       }
       if (missing(X)){
         X = Z[,1:Nchain,drop=FALSE] 
